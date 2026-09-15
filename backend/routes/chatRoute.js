@@ -81,11 +81,11 @@ chatRouter.post("/chat/message", userAuth, async (req, res) => {
         await chat.save();
 
         // 7. Return everything to the frontend
-        // res.json({
-        //     chatId: chat._id,
-        //     reply: aiResponseText
-        // });
-        res.send(aiResponseText);
+        res.json({
+            chatId: chat._id,
+            reply: aiResponseText
+        });
+        // res.send(aiResponseText);
 
     } catch (error) {
         res.status(400).send(error.message);

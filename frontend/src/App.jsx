@@ -1,4 +1,13 @@
 import React, { useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useApp } from './context/AppContext';
+
+// Pages
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Onboarding from './pages/Onboarding';
+
+// Main app components
 import Navbar from './components/Navbar';
 import ProblemFilter from './components/ProblemFilter';
 import ProblemCard from './components/ProblemCard';
@@ -8,8 +17,31 @@ import ChatActionBar from './components/ChatActionBar';
 import Toast from './components/Toast';
 import { Compass, Code2, Bot } from 'lucide-react';
 
-export default function App() {
-  const [mobileTab, setMobileTab] = useState('split'); // 'split', 'problem', 'editor', 'chat'
+/** Guard: redirect to /login if not authenticated */
+function PrivateRoute({ children }) {
+  const { user } = useApp();
+  if (!user) return <Navigate to="/login" replace />;
+  return children;
+}
+
+/** Guard: redirect to /onboarding if user hasn't completed it */
+function OnboardedRoute({ children }) {
+  const { user } = useApp();
+  if (!user) return <Navigate to="/login" replace />;
+  if (!user.onboarded) return <Navigate to="/onboarding" replace />;
+  return children;
+}
+
+/** Guard: redirect to / if already logged in */
+function GuestRoute({ children }) {
+  const { user } = useApp();
+  if (user) return <Navigate to="/" replace />;
+  return children;
+}
+
+/** Main dashboard (was the entire App) */
+function Dashboard() {
+  const [mobileTab, setMobileTab] = useState('split');
 
   return (
     <div className="min-h-screen bg-dark-950 text-slate-100 flex flex-col font-sans selection:bg-brand-cyan/20 selection:text-brand-cyan">
@@ -55,7 +87,7 @@ export default function App() {
           </button>
         </div>
 
-        {/* 2-Column Responsive Layout (degrades cleanly to stacked on mobile) */}
+        {/* 2-Column Responsive Layout */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-5 flex-1 items-start">
           {/* Left Panel: Problem Explorer & Recommender */}
           <section
@@ -99,9 +131,45 @@ export default function App() {
           </section>
         </div>
       </main>
-
-      {/* Floating Toast Notification System */}
-      <Toast />
     </div>
+  );
+}
+
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* Auth pages (guests only) */}
+        <Route path="/login"    element={<GuestRoute><Login /></GuestRoute>} />
+        <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
+
+        {/* Onboarding (logged in but not yet onboarded) */}
+        <Route
+          path="/onboarding"
+          element={
+            <PrivateRoute>
+              <Onboarding />
+            </PrivateRoute>
+          }
+        />
+
+        {/* Main dashboard (logged in) */}
+        <Route
+          path="/"
+          element={
+            <PrivateRoute>
+              <Dashboard />
+            </PrivateRoute>
+          }
+        />
+
+        {/* Catch-all */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+
+      {/* Toast lives outside routes so it persists across navigation */}
+      <Toast />
+    </BrowserRouter>
   );
 }

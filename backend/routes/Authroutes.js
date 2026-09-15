@@ -13,26 +13,30 @@ const { error } = require("console");
 
 authRouter.post("/register", async (req, res) => {
     try {
-        // 1. Validate incoming data (assuming this throws an error if invalid)
-          console.log(req.body); 
-        const isallowed = registerValidation(req.body); 
-        console.log(isallowed);  
+        console.log(req.body); 
 
-        // 2. Destructure the fields you expect from the frontend
-        // This prevents users from injecting unwanted fields into your database
+        // 1. Validate — throw if invalid so catch block returns the error
+        const isallowed = registerValidation(req.body);
+        if (!isallowed) {
+            throw new Error("Please fill all required fields with valid data (username, name, valid email, password).");
+        }
+
+        // 2. Destructure only allowed fields
         const { username, name, email, password, leetcode } = req.body;
 
         // 3. Hash the password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // 4. Build the user object to match your Schema structure
+        // 4. Build the user object — handles.leetcode must be an object, not a string
         const newUser = new User({
             username: username,
             name: name,
             email: email,
             password: hashedPassword,
             handles: {
-                leetcode: leetcode || "" // Maps the frontend input to the nested schema field
+                leetcode: {
+                    username: leetcode || ""
+                }
             }
         });
 
@@ -42,10 +46,10 @@ authRouter.post("/register", async (req, res) => {
         res.status(201).send("User registered successfully");
     } 
     catch(error) {
-        // Use standard HTTP status codes for errors
         res.status(400).send(error.message);
     }
 });
+
 
 authRouter.post("/login", async (req,res)=>{
     try{

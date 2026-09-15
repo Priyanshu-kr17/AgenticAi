@@ -21,6 +21,16 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      '/auth': {
+        target: 'http://localhost:1800',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/update': {
+        target: 'http://localhost:1800',
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 });

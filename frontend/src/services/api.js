@@ -4,6 +4,89 @@
  */
 
 const BACKEND_BASE_URL = 'http://localhost:1800';
+
+// ─── Auth helpers ─────────────────────────────────────────────────────────────
+
+/**
+ * Register a new user
+ * POST /auth/register
+ */
+export async function registerUser({ username, name, email, password, leetcode = '' }) {
+  const candidateUrls = ['/auth/register', `${BACKEND_BASE_URL}/auth/register`];
+  for (const url of candidateUrls) {
+    try {
+      const res = await fetchWithTimeout(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, name, email, password, leetcode }),
+      });
+      const text = await res.text();
+      if (res.ok) return { success: true, message: text };
+      return { success: false, message: text };
+    } catch { /* try next */ }
+  }
+  return { success: false, message: 'Could not reach the backend. Is it running?' };
+}
+
+/**
+ * Login a user — sets JWT cookie on the browser
+ * POST /auth/login
+ */
+export async function loginUser({ username, password }) {
+  const candidateUrls = ['/auth/login', `${BACKEND_BASE_URL}/auth/login`];
+  for (const url of candidateUrls) {
+    try {
+      const res = await fetchWithTimeout(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const text = await res.text();
+      if (res.ok) return { success: true, message: text };
+      return { success: false, message: text };
+    } catch { /* try next */ }
+  }
+  return { success: false, message: 'Could not reach the backend. Is it running?' };
+}
+
+/**
+ * Logout the current user — clears the JWT cookie
+ * POST /auth/logout
+ */
+export async function logoutUser() {
+  const candidateUrls = ['/auth/logout', `${BACKEND_BASE_URL}/auth/logout`];
+  for (const url of candidateUrls) {
+    try {
+      const res = await fetchWithTimeout(url, { method: 'POST' });
+      if (res.ok || res.status < 500) return { success: true };
+    } catch { /* try next */ }
+  }
+  return { success: false };
+}
+
+/**
+ * Complete onboarding / update profile
+ * PATCH /update/onboarding
+ */
+export async function completeOnboarding({ leetcode, skills, preferredRoles, experienceLevel }) {
+  const candidateUrls = ['/update/onboarding', `${BACKEND_BASE_URL}/update/onboarding`];
+  for (const url of candidateUrls) {
+    try {
+      const res = await fetchWithTimeout(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leetcode, skills, preferredRoles, experienceLevel }),
+      });
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        return { success: true, data };
+      }
+      const text = await res.text();
+      return { success: false, message: text };
+    } catch { /* try next */ }
+  }
+  return { success: false, message: 'Could not reach the backend.' };
+}
 const REQUEST_TIMEOUT_MS = 6000;
 
 // Curated library of authentic LeetCode problems by topic & difficulty for offline mock

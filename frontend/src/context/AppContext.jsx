@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { fetchProblemRecommendation, sendChatMessage, checkBackendHealth } from '../services/api';
+import { fetchProblemRecommendation, sendChatMessage, checkBackendHealth, logoutUser } from '../services/api';
+
 
 const AppContext = createContext(null);
 
@@ -26,6 +27,26 @@ int main() {
 }`;
 
 export function AppProvider({ children }) {
+  // ── Auth state – persisted in localStorage ──────────────────────────────────
+  const [user, setUserState] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('algo_user')) || null; } catch { return null; }
+  });
+
+  const setUser = useCallback((updater) => {
+    setUserState((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      if (next) localStorage.setItem('algo_user', JSON.stringify(next));
+      else localStorage.removeItem('algo_user');
+      return next;
+    });
+  }, []);
+
+  const handleLogout = useCallback(async () => {
+    await logoutUser();
+    setUser(null);
+  }, [setUser]);
+
+  // ── Problem / editor state ───────────────────────────────────────────────────
   const [selectedDifficulty, setSelectedDifficulty] = useState('Medium');
   const [selectedTopic, setSelectedTopic] = useState('Array');
   const [currentProblem, setCurrentProblem] = useState(null);
@@ -155,6 +176,9 @@ export function AppProvider({ children }) {
   }, [addToast]);
 
   const value = {
+    user,
+    setUser,
+    handleLogout,
     selectedDifficulty,
     setSelectedDifficulty,
     selectedTopic,
